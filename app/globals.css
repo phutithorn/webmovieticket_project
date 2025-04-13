@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fontsource/prompt/400.css";
+@import "@fontsource/prompt/700.css";
 
 :root {
   --background: #ffffff;
@@ -24,3 +26,12 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+.text-gradient {
+  background: linear-gradient(to bottom right, rgba(255,255,255,0.98), rgba(255,255,255,0.3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.thai-font {
+  font-family: "Prompt", sans-serif;
+}
+
