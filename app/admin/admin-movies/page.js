@@ -27,7 +27,7 @@ export default function AdminMoviesPage() {
         <div className="flex min-h-screen bg-white">
             {/* Sidebar */}
             <AdminSidebar />
-            
+
 
             {/* Content */}
             <div className="flex-1 p-6">
@@ -95,9 +95,8 @@ export default function AdminMoviesPage() {
 
             {/* Modal */}
             {isModalOpen && (
-              <div className="fixed inset-0 backdrop-blur-sm bg-white/5 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
-                        <button onClick={closeModal} className="absolute top-2 right-3 text-gray-500">✖</button>
+                <div className="fixed inset-0 backdrop-blur-sm bg-white/5 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg w-full max-w-md p-6 relative overflow-y-auto max-h-[90vh]">                        <button onClick={closeModal} className="absolute top-2 right-3 text-gray-500">✖</button>
 
                         {/* หัวข้อดำ */}
                         <h2 className="text-lg font-semibold text-black mb-4">
@@ -168,7 +167,31 @@ export default function AdminMoviesPage() {
                                     className="w-full border px-3 py-1.5 rounded text-black"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Director</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter director name"
+                                    className="w-full border px-3 py-2 rounded placeholder-gray-600 text-black"
+                                />
+                            </div>
 
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Cast</label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter main cast names"
+                                    className="w-full border px-3 py-2 rounded placeholder-gray-600 text-black"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Synopsis</label>
+                                <textarea
+                                    rows="4"
+                                    placeholder="Enter movie synopsis"
+                                    className="w-full border px-3 py-2 rounded placeholder-gray-600 text-black"
+                                />
+                            </div>
                             <div className="flex justify-end gap-2 pt-2">
                                 <button type="button" onClick={closeModal} className="px-4 py-1 border rounded text-gray-600">Cancel</button>
                                 <button type="submit" className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>

@@ -15,6 +15,54 @@ export default function RegisterPage() {
     visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: 'easeOut' } },
   }
 
+  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
+  const [message, setMessage] = useState(null)
+  const [errorField, setErrorField] = useState(null)
+  const [formError, setFormError] = useState(null)
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setMessage(null)
+    setErrorField(null)
+    setFormError(null)
+
+    if (!email || !username || !password || !confirm) {
+      setFormError('Please fill in all required fields.')
+      return
+    }
+
+    if (!isMatch) return
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username, password }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        if (data.error === 'email_taken') setErrorField('email')
+        else if (data.error === 'username_taken') setErrorField('username')
+        else setErrorField('general')
+
+        throw new Error(data.error)
+      }
+
+
+      setMessage('Account created! Redirecting...')
+      setTimeout(() => window.location.href = '/home', 1500)
+
+    } catch (err) {
+      setMessage(err.message)
+    }
+  }
+
+
+
+
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 relative">
       <div className="relative flex flex-col px-10 py-10 ">
@@ -56,7 +104,7 @@ export default function RegisterPage() {
       <div className="flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md text-black bg-white rounded-xl shadow-lg p-10">
           <h2 className="text-2xl font-bold mb-8">Create an account</h2>
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium mb-2">Email</label>
               <div className="relative">
@@ -65,8 +113,13 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="Enter your email"
                   className="w-full pl-10 pr-4 py-3 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#00E676]"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+              {errorField === 'email' && (
+                <p className="text-sm text-red-500 mt-1">This email is already registered</p>
+              )}
             </div>
 
             <div>
@@ -77,8 +130,13 @@ export default function RegisterPage() {
                   type="text"
                   placeholder="Enter your username"
                   className="w-full pl-10 pr-4 py-3 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#00E676]"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
+              {errorField === 'username' && (
+                <p className="text-sm text-red-500 mt-1">This username is already taken</p>
+              )}
             </div>
 
             <div>
@@ -123,6 +181,9 @@ export default function RegisterPage() {
               </div>
               {!isMatch && <p className="text-sm text-red-500 mt-1">Passwords do not match</p>}
             </div>
+            {formError && (
+              <p className="text-sm text-red-500 text-center">{formError}</p>
+            )}
 
             <button
               type="submit"

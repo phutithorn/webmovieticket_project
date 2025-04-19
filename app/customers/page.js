@@ -10,7 +10,7 @@ const sections = {
     { title: 'Minecraft', poster: '/posters/minecraft.png', category: 'แอ็คชัน / ผจญภัย / แฟนตาซี', duration: '01 ชม. 41 นาที', language: 'ENG / SUBTITLE', releaseDate: '04 APR 2025' },
     { title: 'Mickey 17', poster: '/posters/mickey17.png', category: 'ไซไฟ / ลึกลับ', duration: '2 ชม. 2 นาที', language: 'KOR / SUBTITLE', releaseDate: '10 APR 2025' },
     { title: 'The Amateur', poster: '/posters/amateur.png', category: 'แอ็คชัน / ดราม่า', duration: '1 ชม. 50 นาที', language: 'ENG / SUBTITLE', releaseDate: '12 APR 2025' },
-    { title: 'A Working Man', poster: '/posters/aworkman.png', category: 'ดราม่า / อาชญากรรม', duration: '1 ชม. 45 นาที', language: 'ENG / SUBTITLE', releaseDate: '18 APR 2025' },
+    { title: 'A Working Man', poster: '/posters/aworkman.png', category: 'ดราม่า / อาชญากรรม', duration: '1 ชม. 45 นาที', language: 'ENG / SUBTITLE', releaseDate: '12 APR 2025' },
   ],
   'โปรแกรมหน้า': [
     { title: 'G20', poster: '/posters/G20.png', category: 'แอ็คชัน / ระทึกขวัญ', duration: '2 ชม. 10 นาที', language: 'ENG / SUBTITLE', releaseDate: '20 APR 2025' },

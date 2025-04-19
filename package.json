@@ -11,10 +11,13 @@
   "dependencies": {
     "@fontsource/prompt": "^5.2.5",
     "@heroicons/react": "^2.2.0",
+    "bcrypt": "^5.1.1",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.6.3",
     "lucide-react": "^0.487.0",
+    "mysql2": "^3.14.0",
     "next": "15.3.0",
+    "promptpay-qr": "^0.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

@@ -1,19 +1,52 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import promptpay from 'promptpay-qr'  // ✅ use default import only
 
 export default function OrderDetailPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const id = searchParams.get('id')
   const title = searchParams.get('title') || 'Unknown Movie'
   const date = searchParams.get('date') || 'N/A'
   const time = searchParams.get('time') || '--:--'
   const seats = searchParams.get('seats') || ''
   const types = searchParams.get('seatTypes') || ''
   const total = parseFloat(searchParams.get('total') || '0')
+
   const seatList = seats.split(',').map(s => s.trim()).filter(Boolean)
   const typeList = types.split(',').map(t => t.trim()).filter(Boolean)
   const grouped = typeList.reduce((a, t) => (a[t] = (a[t] || 0) + 1, a), {})
   const getPrice = t => t === 'Suite (Pair)' ? 1500 : t === 'Premium' ? 540 : 320
+
+  const [qrUrl, setQrUrl] = useState('')
+  const [fetchedTitle, setFetchedTitle] = useState('')
+  const finalTitle = title !== 'Unknown Movie' ? title : fetchedTitle || ''
+
+  useEffect(() => {
+    const fetchMovie = async () => {
+      const res = await fetch(`/api/movies/${id}`)
+      const data = await res.json()
+      if (data?.title) {
+        setFetchedTitle(data.title)
+      }
+    }
+
+    if (id && (!title || title === 'Unknown Movie')) {
+      fetchMovie()
+    }
+  }, [id, title])
+
+  useEffect(() => {
+    const receiver = '0962899742'  // ✅ your phone number here
+    const amount = total
+
+    const payload = promptpay(receiver, { amount })
+    const encoded = encodeURIComponent(payload)
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=200x200`
+
+    setQrUrl(qrImageUrl)
+  }, [total])
 
   return (
     <div className="min-h-screen bg-gradient-custom text-white flex items-center justify-center px-4 py-8">
@@ -22,7 +55,7 @@ export default function OrderDetailPage() {
         <p className="text-sm text-gray-300 mb-2">Schedule</p>
         <div className="mb-6">
           <p className="text-base font-semibold">Movie Title</p>
-          <p className="mb-2 text-lg">{title}</p>
+          <p className="mb-2 text-lg">{finalTitle}</p>
           <div className="flex justify-between">
             <div><p className="text-sm text-gray-300">Date</p><p className="text-base">{date}</p></div>
             <div className="text-right"><p className="text-sm text-gray-300">Time</p><p className="text-base">{time}</p></div>
@@ -45,6 +78,13 @@ export default function OrderDetailPage() {
           <p>Total payment</p><p>฿ {total.toLocaleString()}</p>
         </div>
         <p className="text-xs text-gray-400 mt-2">*Purchased ticket cannot be canceled</p>
+        {qrUrl && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-400 mb-2">Scan this PromptPay QR Code</p>
+            <img src={qrUrl} alt="PromptPay QR Code" className="mx-auto rounded" />
+          </div>
+        )}
+
         <div className="mt-6 flex flex-col gap-2">
           <button onClick={() => router.back()} className="bg-white text-black py-2 rounded hover:bg-gray-300">Back</button>
           <button className="bg-[#00E676] text-black py-2 rounded hover:bg-[#00C853] font-semibold">Checkout Ticket</button>

@@ -1,18 +1,38 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useRouter, useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
 
 export default function BookingPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const { id } = useParams()
 
-  const title = searchParams.get('title') || 'Unknown Title'
-  const poster = searchParams.get('poster') || '/default.jpg'
-  const duration = searchParams.get('duration') || '-'
-  const type = searchParams.get('type') || '-'
-  const releaseDate = searchParams.get('releaseDate')
+  const [movie, setMovie] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        const res = await fetch(`/api/movies/${id}`)
+        const data = await res.json()
+        setMovie(data)
+      } catch (err) {
+        console.error('Failed to load movie:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) fetchMovie()
+  }, [id])
+
+  const title = movie?.title || 'Unknown Title'
+  const poster = movie?.poster || '/default.jpg'
+  const duration = movie?.duration || '-'
+  const type = movie?.category || '-'
+  const releaseDate = movie?.release_date
+
 
   const now = dayjs()
   const isComingSoon = releaseDate && dayjs(releaseDate, 'DD MMM YYYY').isAfter(now)
@@ -28,15 +48,19 @@ export default function BookingPage() {
 
   const handleProceed = () => {
     if (!time) return setShowTimeAlert(true)
-    router.push(`/seat?title=${encodeURIComponent(title)}&date=${date}&time=${time}&theater=${theater}&poster=${poster}`)
+    router.push(`/seat/${id}?date=${date}&time=${time}&theater=${theater}`)
   }
 
   const confirmLogout = () => router.push('/login')
 
+  if (loading) return <p className="text-white text-center mt-20">Loading...</p>
+  if (!movie) return <p className="text-white text-center mt-20">Movie not found</p>
+
+
   return (
     <div className="min-h-screen relative text-white px-6 py-1 bg-gradient-custom">
       <div className="absolute top-6 left-6">
-        <button onClick={() => router.back()} className="transition transform hover:scale-105 hover:brightness-125">
+        <button onClick={() => router.push('/home')} className="transition transform hover:scale-105 hover:brightness-125">
           <Image src="/logo.png" alt="Logo" width={100} height={40} />
         </button>
       </div>
@@ -75,7 +99,23 @@ export default function BookingPage() {
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <Image src={poster} alt={title} width={220} height={320} className="rounded-lg mb-4" />
+          {poster.startsWith('http') ? (
+            <img
+              src={poster}
+              alt={title}
+              width={220}
+              height={320}
+              className="rounded-lg mb-4 object-cover"
+            />
+          ) : (
+            <Image
+              src={poster}
+              alt={title}
+              width={220}
+              height={320}
+              className="rounded-lg mb-4 object-cover"
+            />
+          )}
           <h3 className="text-lg font-bold uppercase thai-font">{title}</h3>
           <p className="text-sm mt-1">Duration <span className="ml-2 thai-font">{duration}</span></p>
           <p className="text-sm">Type <span className="ml-2 thai-font">{type}</span></p>
