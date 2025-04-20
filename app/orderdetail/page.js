@@ -15,7 +15,8 @@ export default function OrderDetailPage() {
   const types = searchParams.get('seatTypes') || ''
   const total = parseFloat(searchParams.get('total') || '0')
   const theaterId = searchParams.get('theater')?.replace('Theater ', '') || '1'
-
+  const showtimeId = searchParams.get('showtime_id')
+  console.log('Showtime ID:', showtimeId)
 
   const seatList = seats.split(',').map(s => s.trim()).filter(Boolean)
   const typeList = types.split(',').map(t => t.trim()).filter(Boolean)
@@ -118,7 +119,8 @@ export default function OrderDetailPage() {
                     seatList,
                     typeList,
                     total,
-                    theaterId
+                    theaterId,
+                    showtimeId   
                   })
                 })
                 const result = await res.json()

@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+dayjs.extend(utc)
 
 export default function BookingPage() {
   const router = useRouter()
@@ -10,50 +12,68 @@ export default function BookingPage() {
 
   const [movie, setMovie] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [theaters, setTheaters] = useState([])
+  const [showtimes, setShowtimes] = useState([])
   const [theater, setTheater] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
-  const [showModal, setShowModal] = useState(false)
   const [showTimeAlert, setShowTimeAlert] = useState(false)
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [movieRes, theaterRes] = await Promise.all([
+      const [movieRes, showtimeRes] = await Promise.all([
         fetch(`/api/movies/${id}`),
-        fetch('/api/theaters')
+        fetch(`/api/showtimes`)
       ])
 
       const movieData = await movieRes.json()
-      const theaterData = await theaterRes.json()
+      const allShowtimes = await showtimeRes.json()
 
+      console.log('[DEBUG ALL SHOWTIMES]', allShowtimes) // ⬅️ ADD THIS LINE
+
+      const relevantShowtimes = allShowtimes.filter(s => s.movie_id === Number(id))
       setMovie(movieData)
-      setTheaters(theaterData)
-      setTheater(theaterData[0]?.name || '')
-      const now = dayjs()
-      const releaseDate = dayjs(movieData.release_date)
-      const base = releaseDate.isAfter(now) ? releaseDate : now
-      setDate(base.format('YYYY-MM-DD'))
+      setShowtimes(relevantShowtimes)
+
+      if (relevantShowtimes.length > 0) {
+        setTheater(relevantShowtimes[0].theater_id.toString())
+        setDate(dayjs(relevantShowtimes[0].show_date).format('YYYY-MM-DD'))
+      }
+
       setLoading(false)
     }
 
     if (id) fetchAll()
   }, [id])
 
+
+  const availableTheaters = [...new Set(showtimes.map(s => s.theater_id))]
+  const availableDates = [...new Set(showtimes.filter(s => s.theater_id.toString() === theater).map(s => s.show_date))]
+  const availableTimes = [...new Set(showtimes.filter(s => s.theater_id.toString() === theater && s.show_date === date).map(s => s.show_time.slice(0, 5)))]
+
+  const handleProceed = () => {
+    if (!time || !theater) {
+      setShowTimeAlert(true)
+      return
+    }
+  
+    router.push(
+      `/seat/${id}?movie_id=${id}&date=${date}&time=${time}&theater_id=${theater}&title=${movie.title}&poster=${movie.poster}`
+    )
+  }
+  
+  
+
+
+
+
   if (loading) return <p className="text-white text-center mt-20">Loading...</p>
   if (!movie) return <p className="text-white text-center mt-20">Movie not found</p>
+
 
   const now = dayjs()
   const releaseDate = dayjs(movie.release_date)
   const isComingSoon = releaseDate.isAfter(now)
   const baseDate = isComingSoon ? releaseDate : now
-  const availableDates = Array.from({ length: 6 }, (_, i) => baseDate.add(i, 'day'))
-  const availableTimes = ['13:00', '15:40', '18:00', '20:30', '22:00', '23:00']
-
-  const handleProceed = () => {
-    if (!time) return setShowTimeAlert(true)
-    router.push(`/seat/${id}?date=${date}&time=${time}&theater=${theater}`)
-  }
 
   return (
     <div className="min-h-screen relative text-white px-6 py-1 bg-gradient-custom">
@@ -65,36 +85,75 @@ export default function BookingPage() {
 
       <div className="max-w-6xl mx-auto pt-28 grid grid-cols-1 md:grid-cols-2 gap-10">
         <div>
-          <h2 className="text-2xl font-bold mb-4">Theater</h2>
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {theaters.map(t => (
-              <button key={t.id} onClick={() => setTheater(t.name)} className={`px-4 py-2 rounded-full border ${theater === t.name ? 'bg-[#00E676] text-black' : 'text-white border-white'}`}>{t.name}</button>
-            ))}
-          </div>
+          {availableTheaters.length === 0 ? (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Theater</h2>
+              <p className="text-red-400 mb-6">No theater available for this movie</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Theater</h2>
+              <div className="flex gap-2 mb-6 flex-wrap">
+                {availableTheaters.map(tid => (
+                  <button
+                    key={tid}
+                    onClick={() => setTheater(tid.toString())}
+                    className={`px-4 py-2 rounded-full border ${theater === tid.toString() ? 'bg-[#00E676] text-black' : 'text-white border-white'}`}
+                  >
+                    Theater {tid}
+                  </button>
+                ))}
+              </div>
 
-          <h2 className="text-2xl font-bold mb-4">Date</h2>
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {availableDates.map((d, i) => {
-              const value = d.format('YYYY-MM-DD')
-              return (
-                <button key={i} onClick={() => setDate(value)} className={`px-4 py-2 rounded-md border ${date === value ? 'bg-[#00E676] text-black' : 'text-white border-white'}`}>
-                  {d.format('DD MMM ddd')}
-                </button>
-              )
-            })}
-          </div>
+              {availableDates.length > 0 && (
+                <>
+                  <h2 className="text-2xl font-bold mb-4">Date</h2>
+                  <div className="flex gap-2 mb-6 flex-wrap">
+                    {availableDates.map((d, i) => (
+                      <button key={i} onClick={() => setDate(d)} className={`px-4 py-2 rounded-md border ${date === d ? 'bg-[#00E676] text-black' : 'text-white border-white'}`}>
+                        {dayjs(d).format('DD MMM ddd')}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
-          <h2 className="text-2xl font-bold mb-4">Time</h2>
-          <div className="flex gap-2 flex-wrap">
-            {availableTimes.map((t, i) => {
-              const isPast = !isComingSoon && dayjs(`${date} ${t}`, 'YYYY-MM-DD HH:mm').isBefore(now)
-              return (
-                <button key={i} disabled={isPast} onClick={() => setTime(t)} className={`px-4 py-2 rounded-md border ${time === t ? 'bg-[#00E676] text-black' : 'text-white border-white'} ${isPast ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  {t}
-                </button>
-              )
-            })}
-          </div>
+              {availableTimes.length > 0 && (
+                <>
+                  <h2 className="text-2xl font-bold mb-4">Time</h2>
+                  <div className="flex gap-2 flex-wrap">
+                    {availableTimes.map((t, i) => {
+                      const matched = showtimes.find(
+                        s =>
+                          s.movie_id === Number(id) &&
+                          s.theater_id.toString() === theater &&
+                          dayjs(s.show_date).format('YYYY-MM-DD') === date &&
+                          dayjs(s.show_time, ['HH:mm:ss']).format('HH:mm') === time
+                      )
+
+                      const isPast = !isComingSoon && dayjs(`${matched?.show_date} ${t}`, 'YYYY-MM-DD HH:mm').isBefore(now)
+
+                      return (
+                        <button
+                          key={i}
+                          disabled={isPast}
+                          onClick={() => {
+                            setTime(t)
+                            if (matched) setDate(matched.show_date) // 💥 fix here
+                          }}
+                          className={`px-4 py-2 rounded-md border ${time === t ? 'bg-[#00E676] text-black' : 'text-white border-white'} ${isPast ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {t}
+                        </button>
+                      )
+                    })}
+
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
         </div>
 
         <div className="flex flex-col items-center">
@@ -107,12 +166,29 @@ export default function BookingPage() {
           <p className="text-sm mt-1">Duration <span className="ml-2 thai-font">{movie.duration}</span></p>
           <p className="text-sm">Type <span className="ml-2 thai-font">{movie.category}</span></p>
           <div className="border mt-6 rounded-xl p-4 text-center w-full max-w-sm">
-            <p className="text-lg font-semibold thai-font">{theater}</p>
-            <p className="text-sm mt-1">{dayjs(date).format('DD MMM YYYY')}</p>
-            <p className="text-sm">{time}</p>
-            <p className="text-xs text-gray-400 mt-2">*Seat selection can be done after this</p>
-            <button onClick={handleProceed} className="bg-[#00E676] text-black w-full mt-4 py-2 rounded-md hover:bg-[#00c765] transition">Proceed</button>
+            <p className="text-lg font-semibold thai-font">
+              {availableTheaters.length > 0 ? `Theater ${theater}` : '-'}
+            </p>
+            {availableTheaters.length > 0 ? (
+              <>
+                <p className="text-sm mt-1">{dayjs(date).format('DD MMM YYYY')}</p>
+                <p className="text-sm">{time}</p>
+                <p className="text-xs text-gray-400 mt-2">*Seat selection can be done after this</p>
+                <button onClick={handleProceed} className="bg-[#00E676] text-black w-full mt-4 py-2 rounded-md hover:bg-[#00c765] transition">Proceed</button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm mt-2 text-red-400 italic">*Cannot select seat</p>
+                <button
+                  onClick={() => router.push('/home')}
+                  className="bg-white text-black w-full mt-4 py-2 rounded-md hover:bg-gray-300 transition"
+                >
+                  Back to Home
+                </button>
+              </>
+            )}
           </div>
+
         </div>
       </div>
 

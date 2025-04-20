@@ -1,5 +1,6 @@
 // app/api/showtimes/route.js
 import mysql from 'mysql2/promise'
+import dayjs from 'dayjs' // ✅ Make sure to import this
 
 const dbConfig = {
   host: process.env.TIDB_HOST,
@@ -9,14 +10,28 @@ const dbConfig = {
   ssl: { rejectUnauthorized: true }
 }
 
-export async function GET() {
+export async function GET(req) {
+  const url = new URL(req.url)
+  const movie_id = url.searchParams.get('movie_id')
+  const theater_id = url.searchParams.get('theater_id')
+  const date = url.searchParams.get('date')
+  const time = url.searchParams.get('time')
+
   const connection = await mysql.createConnection(dbConfig)
-  const [rows] = await connection.execute(
-    `SELECT * FROM showtimes ORDER BY show_date ASC, show_time ASC`
-  )
+
+  let query = 'SELECT * FROM showtimes'
+  let values = []
+
+  if (movie_id && theater_id && date && time) {
+    query += ' WHERE movie_id = ? AND theater_id = ? AND show_date = ? AND show_time LIKE ?'
+    values = [movie_id, theater_id, date, `${time}%`] // % for partial match like "18:00%"
+  }
+
+  const [rows] = await connection.execute(query, values)
   await connection.end()
   return new Response(JSON.stringify(rows), { status: 200 })
 }
+
 
 export async function POST(req) {
   const { movie_id, theater_id, show_date, show_time } = await req.json()
@@ -25,10 +40,14 @@ export async function POST(req) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 })
   }
 
+  // ✅ Normalize input format to match MySQL expectations
+  const formattedDate = dayjs(show_date).format('YYYY-MM-DD') // e.g. "2025-04-22"
+  const formattedTime = dayjs(show_time, ['HH:mm', 'HH:mm:ss']).format('HH:mm:ss') // e.g. "18:00:00"
+
   const connection = await mysql.createConnection(dbConfig)
   await connection.execute(
     `INSERT INTO showtimes (movie_id, theater_id, show_date, show_time) VALUES (?, ?, ?, ?)`,
-    [movie_id, theater_id, show_date, show_time]
+    [movie_id, theater_id, formattedDate, formattedTime]
   )
   await connection.end()
 
