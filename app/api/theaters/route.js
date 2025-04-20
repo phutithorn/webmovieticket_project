@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const { name, total_seats = 400 } = await req.json()
+  const { name,} = await req.json()
 
   const connection = await mysql.createConnection({
     host: process.env.TIDB_HOST,
@@ -26,8 +26,8 @@ export async function POST(req) {
   })
 
   await connection.execute(
-    `INSERT INTO theaters (name, total_seats) VALUES (?, ?)`,
-    [name, total_seats]
+    `INSERT INTO theaters (name) VALUES (?)`,
+    [name]
   )
 
   await connection.end()

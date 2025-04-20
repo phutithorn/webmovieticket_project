@@ -12,7 +12,19 @@ const dbConfig = {
 export async function GET() {
   const connection = await mysql.createConnection(dbConfig)
   const [rows] = await connection.execute(
-    `SELECT * FROM showtimes ORDER BY show_date ASC, show_time ASC`
+    `
+    SELECT 
+      s.id,
+      s.movie_id,
+      m.title AS movie_title,
+      s.theater_id,
+      s.show_date,
+      s.show_time,
+      s.created_at
+    FROM showtimes s
+    JOIN movies m ON s.movie_id = m.id
+    ORDER BY s.show_date, s.show_time
+  `
   )
   await connection.end()
   return new Response(JSON.stringify(rows), { status: 200 })
