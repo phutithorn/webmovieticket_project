@@ -6,12 +6,15 @@ import AdminHeader from '@/components/AdminHeader'
 
 import { useState } from 'react'
 import { EyeIcon, EyeSlashIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/navigation'
+
 
 
 export default function AdminMoviesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isEditMode, setIsEditMode] = useState(false)
     const [showing, setShowing] = useState(true)
+    const router = useRouter()
 
     const openModal = (edit = false) => {
         setIsModalOpen(true)
@@ -32,8 +35,8 @@ export default function AdminMoviesPage() {
             {/* Content */}
             <div className="flex-1 p-6">
                 {/* Header */}
-                <AdminHeader title="Admin Movie" />
-
+                <AdminHeader title="Admin Movie" 
+                />
                 {/* Create Button */}
                 <div className="flex justify-end mb-4">
                     <button

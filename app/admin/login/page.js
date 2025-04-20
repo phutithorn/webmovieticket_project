@@ -1,17 +1,30 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
-
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
+    const router = useRouter()
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log('Logging in:', email, password)
+
+        const res = await fetch('/api/admin-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+
+        const result = await res.json()
+        if (res.ok) {
+            router.push('/admin/admin-movies') 
+        } else {
+            alert(result.message)
+        }
     }
 
     return (
@@ -28,7 +41,6 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 placeholder-gray-500 text-black"
                     />
-
 
                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <div className="relative mb-6">
@@ -49,7 +61,6 @@ export default function LoginPage() {
                                 <EyeIcon className="h-5 w-5" />
                             )}
                         </span>
-
                     </div>
 
                     <button
