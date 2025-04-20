@@ -13,6 +13,8 @@ export default function SeatSelectionPage() {
   const [selectedSeats, setSelectedSeats] = useState([])
   const [hydrated, setHydrated] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
+  const [bookedSeats, setBookedSeats] = useState([]) // ที่นั่งที่ถูกจอง
+
 
   const date = searchParams.get('date') || ''
   const time = searchParams.get('time') || ''
@@ -54,6 +56,23 @@ export default function SeatSelectionPage() {
 
     if (id) fetchMovie()
   }, [id])
+
+  useEffect(() => {
+    const fetchBookedSeats = async () => {
+      if (!id || !date || !time || !theater) return
+      try {
+        const res = await fetch(`/api/booked-seats?movieId=${id}&date=${date}&time=${time}&theater=${theater}`)
+        const data = await res.json()
+        setBookedSeats(data.seats || [])
+        setSelectedSeats([]) // reset ที่นั่งที่เลือก เมื่อเปลี่ยนรอบ
+      } catch (err) {
+        console.error('Error fetching booked seats:', err)
+      }
+    }
+  
+    fetchBookedSeats()
+  }, [id, date, time, theater])
+  
 
 
   const getPrice = s => s.startsWith('AA') ? 1500 : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 540 : 320
