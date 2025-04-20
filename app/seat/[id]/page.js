@@ -13,10 +13,13 @@ export default function SeatSelectionPage() {
   const [selectedSeats, setSelectedSeats] = useState([])
   const [hydrated, setHydrated] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
+  const [bookedSeats, setBookedSeats] = useState([])
+
 
   const date = searchParams.get('date') || ''
   const time = searchParams.get('time') || ''
   const theater = searchParams.get('theater') || ''
+  const theaterId = parseInt(theater.replace('Theater ', '')) || 1
   const title = searchParams.get('title') || ''
   const poster = searchParams.get('poster') || '/default.jpg'
   // const title = movie?.title || ''
@@ -33,6 +36,19 @@ export default function SeatSelectionPage() {
     { name: 'Premium', color: 'bg-[#b9f6ca]', price: 540 },
     { name: 'Suite (Pair)', color: 'bg-yellow-300', price: 1500 }
   ]
+
+  useEffect(() => {
+    const fetchBookedSeats = async () => {
+      const res = await fetch(`/api/booking-seats/check?theater_id=${theaterId}&date=${date}&time=${time}`)
+      const data = await res.json()
+      setBookedSeats(data.bookedSeats || [])
+    }
+
+    if (theater && date && time) {
+      fetchBookedSeats()
+    }
+  }, [theater, date, time])
+
 
   useEffect(() => {
     setSelectedSeats([])
@@ -55,11 +71,24 @@ export default function SeatSelectionPage() {
     if (id) fetchMovie()
   }, [id])
 
-
+  const getTypeColor = (s) => {
+    if (s.startsWith('AA')) return 'bg-yellow-300 text-black'
+    if (['D', 'C', 'B', 'A'].some(r => s.startsWith(r))) return 'bg-[#b9f6ca] text-black'
+    return 'bg-white text-black'
+  }
   const getPrice = s => s.startsWith('AA') ? 1500 : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 540 : 320
   const getType = s => s.startsWith('AA') ? 'Suite (Pair)' : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 'Premium' : 'Deluxe'
-  const getColor = (s, sel) => sel ? 'bg-green-500 text-black' : s.startsWith('AA') ? 'bg-yellow-300 text-black' : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 'bg-[#b9f6ca] text-black' : 'bg-white text-black'
-  const toggle = s => setSelectedSeats(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])
+  const getColor = (s, sel) => {
+    const isBooked = bookedSeats.includes(s)
+    if (isBooked) return 'bg-gray-400 text-white cursor-not-allowed'
+    return sel ? 'bg-green-500 text-black' : getTypeColor(s)
+  }
+
+  const toggle = s => {
+    if (bookedSeats.includes(s)) return
+    setSelectedSeats(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])
+  }
+
   const total = selectedSeats.reduce((sum, s) => sum + getPrice(s), 0)
 
   const handleProceed = () => {
@@ -76,12 +105,12 @@ export default function SeatSelectionPage() {
       seatTypes: types.join(','),
       total: total.toString()
     }).toString()
-    router.push(`/orderdetail?${query}`)    
+    router.push(`/orderdetail?${query}`)
   }
 
   const handleBack = () => {
     const query = new URLSearchParams({ date, time, theater, poster }).toString()
-    router.push(`/booking/${id}?${query}`)    
+    router.push(`/booking/${id}?${query}`)
   }
 
   const renderRow = row => (

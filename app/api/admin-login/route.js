@@ -43,6 +43,13 @@ export async function POST(req) {
       httpOnly: true,
       maxAge: 60 * 60 * 24, // 1 day
     })
+    
+    cookies().set('role', user.role, {
+      path: '/',
+      httpOnly: true,
+      maxAge: 60 * 60 * 24,
+    })
+    
 
     await connection.end()
     return new Response(JSON.stringify({ message: 'Login successful' }), { status: 200 })

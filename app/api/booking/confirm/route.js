@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise'
 import { cookies } from 'next/headers'
 
 export async function POST(req) {
-  const { movieId, date, time, seatList, typeList, total } = await req.json()
+  const { movieId, date, time, seatList, typeList, total, theaterId } = await req.json()
   const cookieStore = cookies()
   const userId = cookieStore.get('user_id')?.value
 
@@ -23,7 +23,7 @@ export async function POST(req) {
 
     const [bookingResult] = await connection.execute(
       'INSERT INTO bookings (user_id, movie_id, theater, show_date, show_time, total_price) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, movieId, 'Theater 1', date, time, total]
+      [userId, movieId, `Theater ${theaterId}`, date, time, total]
     )
 
     const bookingId = bookingResult.insertId
@@ -32,11 +32,14 @@ export async function POST(req) {
       bookingId,
       label,
       typeList[i],
-      typeList[i] === 'Suite (Pair)' ? 1500 : typeList[i] === 'Premium' ? 540 : 320
+      typeList[i] === 'Suite (Pair)' ? 1500 : typeList[i] === 'Premium' ? 540 : 320,
+      theaterId,
+      date,
+      time
     ])
 
     await connection.query(
-      'INSERT INTO booking_seats (booking_id, seat_label, seat_type, price) VALUES ?',
+      'INSERT INTO booking_seats (booking_id, seat_label, seat_type, price, theater_id, show_date, show_time) VALUES ?',
       [seatValues]
     )
 

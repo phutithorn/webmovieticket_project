@@ -19,7 +19,7 @@ export async function POST(req) {
     })
 
     const [rows] = await connection.execute(
-      'SELECT id, password_hash FROM users WHERE email = ?',
+      'SELECT id, role, password_hash FROM users WHERE email = ?',
       [email]
     )
 
@@ -42,6 +42,12 @@ export async function POST(req) {
       httpOnly: true,
       maxAge: 60 * 60 * 24 * 7, // 7 days
       secure: true,
+    })
+
+    cookies().set('role', user.role, {
+      path: '/',
+      httpOnly: true,
+      maxAge: 60 * 60 * 24,
     })
 
     return new Response(JSON.stringify({ success: true }), { status: 200 })

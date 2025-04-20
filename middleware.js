@@ -1,18 +1,30 @@
 import { NextResponse } from 'next/server'
 
-export function middleware(request) {
+export async function middleware(request) {
   const userId = request.cookies.get('user_id')?.value
+  const role = request.cookies.get('role')?.value 
+
   const { pathname } = request.nextUrl
 
-  // Routes that are always allowed even without login
+  const isAdminRoute = pathname.startsWith('/admin')
   const publicPaths = ['/login', '/register', '/admin/login']
 
-  // If the path is public, allow access
+  // 1. Allow public routes always
   if (publicPaths.includes(pathname)) {
     return NextResponse.next()
   }
 
-  // All other paths require login
+  // 2. Block /admin routes for non-admins
+  if (isAdminRoute) {
+    if (!userId) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    else if (role !== 'admin') {
+      return NextResponse.redirect(new URL('/home', request.url))
+    }
+  }
+
+  // 3. Block all other routes for not logged-in users
   if (!userId) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -21,5 +33,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|api).*)'], // apply to all routes except static and API
+  matcher: ['/((?!_next|favicon.ico|api).*)'], // Exclude static/API routes
 }

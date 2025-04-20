@@ -1,7 +1,8 @@
 'use client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import promptpay from 'promptpay-qr'  // ✅ use default import only
+import promptpay from 'promptpay-qr'
+
 
 export default function OrderDetailPage() {
   const router = useRouter()
@@ -13,6 +14,8 @@ export default function OrderDetailPage() {
   const seats = searchParams.get('seats') || ''
   const types = searchParams.get('seatTypes') || ''
   const total = parseFloat(searchParams.get('total') || '0')
+  const theaterId = searchParams.get('theater')?.replace('Theater ', '') || '1'
+
 
   const seatList = seats.split(',').map(s => s.trim()).filter(Boolean)
   const typeList = types.split(',').map(t => t.trim()).filter(Boolean)
@@ -114,7 +117,8 @@ export default function OrderDetailPage() {
                     time,
                     seatList,
                     typeList,
-                    total
+                    total,
+                    theaterId
                   })
                 })
                 const result = await res.json()
