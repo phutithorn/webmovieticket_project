@@ -16,6 +16,7 @@ export default function SeatSelectionPage() {
   const [bookedSeats, setBookedSeats] = useState([])
 
 
+
   const date = searchParams.get('date') || ''
   const time = searchParams.get('time') || ''
   const theater = searchParams.get('theater') || ''
@@ -71,11 +72,23 @@ export default function SeatSelectionPage() {
     if (id) fetchMovie()
   }, [id])
 
-  const getTypeColor = (s) => {
-    if (s.startsWith('AA')) return 'bg-yellow-300 text-black'
-    if (['D', 'C', 'B', 'A'].some(r => s.startsWith(r))) return 'bg-[#b9f6ca] text-black'
-    return 'bg-white text-black'
-  }
+  useEffect(() => {
+    const fetchBookedSeats = async () => {
+      if (!id || !date || !time || !theater) return
+      try {
+        const res = await fetch(`/api/booked-seats?movieId=${id}&date=${date}&time=${time}&theater=${theater}`)
+        const data = await res.json()
+        setBookedSeats(data.seats || [])
+        setSelectedSeats([]) // reset ที่นั่งที่เลือก เมื่อเปลี่ยนรอบ
+      } catch (err) {
+        console.error('Error fetching booked seats:', err)
+      }
+    }
+  
+    fetchBookedSeats()
+  }, [id, date, time, theater])
+  
+
   const getPrice = s => s.startsWith('AA') ? 1500 : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 540 : 320
   const getType = s => s.startsWith('AA') ? 'Suite (Pair)' : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 'Premium' : 'Deluxe'
   const getColor = (s, sel) => {
