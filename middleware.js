@@ -5,7 +5,7 @@ export function middleware(request) {
   const { pathname } = request.nextUrl
 
   // Routes that are always allowed even without login
-  const publicPaths = ['/login', '/register', '/home', '/admin/login']
+  const publicPaths = ['/login', '/register', '/admin/login']
 
   // If the path is public, allow access
   if (publicPaths.includes(pathname)) {
@@ -14,7 +14,7 @@ export function middleware(request) {
 
   // All other paths require login
   if (!userId) {
-    return NextResponse.redirect(new URL('/home', request.url))
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()

@@ -22,6 +22,14 @@ export default function OrderDetailPage() {
   const [qrUrl, setQrUrl] = useState('')
   const [fetchedTitle, setFetchedTitle] = useState('')
   const finalTitle = title !== 'Unknown Movie' ? title : fetchedTitle || ''
+  const [paymentStarted, setPaymentStarted] = useState(false)
+  const [showPopup, setShowPopup] = useState(false)
+
+
+  const handleProceedPayment = () => {
+    setPaymentStarted(true)
+  }
+
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -78,7 +86,7 @@ export default function OrderDetailPage() {
           <p>Total payment</p><p>฿ {total.toLocaleString()}</p>
         </div>
         <p className="text-xs text-gray-400 mt-2">*Purchased ticket cannot be canceled</p>
-        {qrUrl && (
+        {paymentStarted && qrUrl && (
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-400 mb-2">Scan this PromptPay QR Code</p>
             <img src={qrUrl} alt="PromptPay QR Code" className="mx-auto rounded" />
@@ -87,13 +95,65 @@ export default function OrderDetailPage() {
 
         <div className="mt-6 flex flex-col gap-2">
           <button onClick={() => router.back()} className="bg-white text-black py-2 rounded hover:bg-gray-300">Back</button>
-          <button className="bg-[#00E676] text-black py-2 rounded hover:bg-[#00C853] font-semibold">Checkout Ticket</button>
+          {!paymentStarted ? (
+            <button
+              onClick={handleProceedPayment}
+              className="bg-[#00E676] text-black py-2 rounded hover:bg-[#00C853] font-semibold"
+            >
+              Proceed Payment
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/booking/confirm', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    movieId: id,
+                    date,
+                    time,
+                    seatList,
+                    typeList,
+                    total
+                  })
+                })
+                const result = await res.json()
+                if (res.ok) {
+                  setShowPopup(true)
+                } else {
+                  alert(result.message || 'Booking failed!')
+                }
+              }}
+              className="bg-red-500 text-white py-2 rounded hover:bg-red-600 font-semibold"
+            >
+              Confirm Payment
+            </button>
+          )}
         </div>
+        {showPopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-lg text-black shadow-lg text-center animate-popup">
+              <h2 className="text-xl font-bold text-[#00E676] mb-2">Payment Confirmed</h2>
+              <p className="text-sm mb-4">Your booking has been successfully completed.</p>
+              <button onClick={() => router.push('/myticket')} className="bg-[#00E676] text-black px-4 py-2 rounded hover:bg-[#00C853]">
+                Go to My Ticket
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
       <style jsx global>{`
         .bg-gradient-custom {
           background: radial-gradient(800px at bottom left,#0B3D29 0%,transparent 70%),
                       radial-gradient(1000px at top right,#04371F 0%,transparent 70%),#000;
+        }
+        @keyframes popup {
+          0% { transform: scale(0.9); opacity: 0 }
+          100% { transform: scale(1); opacity: 1 }
+        }
+        .animate-popup {
+          animation: popup 0.3s ease-out forwards;
         }
       `}</style>
     </div>

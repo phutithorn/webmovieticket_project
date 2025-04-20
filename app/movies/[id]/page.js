@@ -13,6 +13,8 @@ export default function MovieDetailPage() {
   const [movie, setMovie] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [username, setUsername] = useState('')
+
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -36,6 +38,7 @@ export default function MovieDetailPage() {
         const res = await fetch('/api/session')
         const data = await res.json()
         setLoggedIn(data.loggedIn)
+        if (data.username) setUsername(data.username)
       } catch (err) {
         console.error('Failed to check session:', err)
       }
@@ -61,21 +64,26 @@ export default function MovieDetailPage() {
           <Image src="/logo.png" alt="Logo" width={100} height={40} />
         </button>
       </div>
-      <div className="absolute top-6 right-6 flex gap-3">
+      <div className="absolute top-6 right-6 flex items-center gap-4">
         {loggedIn ? (
           <>
+            <div className="text-sm text-[#00E676] font-medium bg-white/10 px-3 py-1 rounded-full shadow-inner backdrop-blur-sm border border-[#00E676]/30 transition-all hover:scale-[1.03]">
+              <Link href="/account">
+                <button className="text-white font-medium">{username}</button>
+              </Link>            </div>
+
             <Link href="/myticket">
-              <button className="text-white px-2 py-2 font-medium relative group">
-                My Ticket
-                <span className="absolute left-0 -bottom-0 w-full h-[3px] bg-[#00E676] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+              <button className="bg-white/10 text-white px-4 py-2 rounded-lg font-medium border border-white/20 hover:bg-[#00E676] hover:text-black transition-all duration-200 shadow">
+                🎟️ My Ticket
               </button>
             </Link>
+
             <button
               onClick={async () => {
                 await fetch('/api/logout', { method: 'POST' })
                 window.location.href = '/login'
               }}
-              className="bg-red-600 text-white px-4 py-2 rounded-md font-medium hover:bg-red-700 transition"
+              className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-all shadow"
             >
               Logout
             </button>
@@ -83,14 +91,19 @@ export default function MovieDetailPage() {
         ) : (
           <>
             <Link href="/login">
-              <button className="bg-[#00E676] text-white px-4 py-2 rounded-md font-medium hover:bg-[#00C853]">Login</button>
+              <button className="bg-[#00E676] text-black px-4 py-2 rounded-md font-semibold hover:bg-[#00C853] transition-all">
+                Login
+              </button>
             </Link>
             <Link href="/register">
-              <button className="border border-white text-white px-4 py-2 rounded-md font-medium hover:bg-white hover:text-black">Register</button>
+              <button className="border border-white text-white px-4 py-2 rounded-md font-semibold hover:bg-white hover:text-black transition-all">
+                Register
+              </button>
             </Link>
           </>
         )}
       </div>
+
 
 
       {/* Main content */}
