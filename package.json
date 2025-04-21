@@ -12,6 +12,7 @@
     "@fontsource/prompt": "^5.2.5",
     "@heroicons/react": "^2.2.0",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "dayjs": "^1.11.13",
     "dom-to-image-more": "^3.5.0",
     "framer-motion": "^12.6.3",

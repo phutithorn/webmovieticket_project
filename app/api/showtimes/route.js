@@ -40,16 +40,14 @@ export async function POST(req) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 })
   }
 
-  // ✅ Normalize input format to match MySQL expectations
-  const formattedDate = dayjs(show_date).format('YYYY-MM-DD') // e.g. "2025-04-22"
-  const formattedTime = dayjs(show_time, ['HH:mm', 'HH:mm:ss']).format('HH:mm:ss') // e.g. "18:00:00"
-
+  // 🚫 No formatting here — assume frontend sends correct format
   const connection = await mysql.createConnection(dbConfig)
   await connection.execute(
     `INSERT INTO showtimes (movie_id, theater_id, show_date, show_time) VALUES (?, ?, ?, ?)`,
-    [movie_id, theater_id, formattedDate, formattedTime]
+    [movie_id, theater_id, show_date, show_time]
   )
   await connection.end()
 
   return new Response(JSON.stringify({ message: 'Showtime added' }), { status: 201 })
 }
+
