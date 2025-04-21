@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useParams } from 'next/navigation'
+import dayjs from 'dayjs'
 
 
 export default function SeatSelectionPage() {
@@ -14,15 +15,16 @@ export default function SeatSelectionPage() {
   const [hydrated, setHydrated] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
   const [bookedSeats, setBookedSeats] = useState([])
+  const [showtimeId, setShowtimeId] = useState(null)
 
-
-
-  const date = searchParams.get('date') || ''
+  const rawDate = searchParams.get('date') || ''
+  const date = dayjs(rawDate).format('YYYY-MM-DD')
   const time = searchParams.get('time') || ''
   const theater = searchParams.get('theater') || ''
-  const theaterId = parseInt(theater.replace('Theater ', '')) || 1
+  const theaterId = parseInt(searchParams.get('theater_id') || '1')
   const title = searchParams.get('title') || ''
   const poster = searchParams.get('poster') || '/default.jpg'
+
   // const title = movie?.title || ''
   // const poster = movie?.poster || '/default.jpg'
 
@@ -38,17 +40,25 @@ export default function SeatSelectionPage() {
     { name: 'Suite (Pair)', color: 'bg-yellow-300', price: 1500 }
   ]
 
-  useEffect(() => {
-    const fetchBookedSeats = async () => {
-      const res = await fetch(`/api/booking-seats/check?theater_id=${theaterId}&date=${date}&time=${time}`)
+  const fetchBookedSeats = async () => {
+    try {
+      const res = await fetch(
+        `/api/booking-seats/check?movie_id=${id}&theater_id=${theaterId}&date=${date}&time=${time}`
+      )
+      console.log('Checking seat:', { id, theaterId, date, time })
+
+      if (!res.ok) {
+        console.error('Fetch failed with status:', res.status)
+        return setBookedSeats([])
+      }
+
       const data = await res.json()
       setBookedSeats(data.bookedSeats || [])
+    } catch (err) {
+      console.error('Error fetching booked seats:', err)
+      setBookedSeats([])
     }
-
-    if (theater && date && time) {
-      fetchBookedSeats()
-    }
-  }, [theater, date, time])
+  }
 
 
   useEffect(() => {
@@ -73,22 +83,68 @@ export default function SeatSelectionPage() {
   }, [id])
 
   useEffect(() => {
-    const fetchBookedSeats = async () => {
-      if (!id || !date || !time || !theater) return
+    if (id && theaterId && date && time) {
+      fetchBookedSeats()
+    }
+  }, [id, theaterId, date, time])
+
+  useEffect(() => {
+    const fetchShowtimeId = async () => {
       try {
-        const res = await fetch(`/api/booked-seats?movieId=${id}&date=${date}&time=${time}&theater=${theater}`)
+        const res = await fetch(`/api/showtimes?movie_id=${id}&theater_id=${theaterId}&date=${date}&time=${time}`)
         const data = await res.json()
-        setBookedSeats(data.seats || [])
-        setSelectedSeats([]) // reset ที่นั่งที่เลือก เมื่อเปลี่ยนรอบ
+
+        console.log('🎯 Start Matching Showtime')
+        console.log('🔴 Target Params:', { movieId: id, theaterId, date, time })
+
+        data.forEach((s, index) => {
+          const formattedTime = s.show_time.slice(0, 5)
+          const formattedDate = dayjs(s.show_date).format('YYYY-MM-DD')
+
+          const matches = {
+            movie: s.movie_id === Number(id),
+            theater: s.theater_id === theaterId,
+            date: formattedDate === date,
+            time: formattedTime === time
+          }
+
+          const match = Object.values(matches).every(Boolean)
+
+          console.log(`🟡 Entry #${index + 1}`, {
+            id: s.id,
+            movie_id: s.movie_id,
+            theater_id: s.theater_id,
+            show_date: s.show_date,
+            show_time: s.show_time,
+            formatted_time: formattedTime,
+            match,
+            matches
+          })
+
+          if (match) {
+            console.log(`✅ Match Found: showtime_id = ${s.id}`)
+            setShowtimeId(s.id)
+          }
+        })
+
       } catch (err) {
-        console.error('Error fetching booked seats:', err)
+        console.error('❌ Failed to fetch showtime_id', err)
       }
     }
-  
-    fetchBookedSeats()
-  }, [id, date, time, theater])
-  
 
+    if (id && theaterId && date && time) {
+      fetchShowtimeId()
+    }
+  }, [id, theaterId, date, time])
+
+
+
+
+  const getTypeColor = (s) => {
+    if (s.startsWith('AA')) return 'bg-yellow-300 text-black'
+    if (['D', 'C', 'B', 'A'].some(r => s.startsWith(r))) return 'bg-[#b9f6ca] text-black'
+    return 'bg-white text-black'
+  }
   const getPrice = s => s.startsWith('AA') ? 1500 : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 540 : 320
   const getType = s => s.startsWith('AA') ? 'Suite (Pair)' : ['D', 'C', 'B', 'A'].some(r => s.startsWith(r)) ? 'Premium' : 'Deluxe'
   const getColor = (s, sel) => {
@@ -116,10 +172,12 @@ export default function SeatSelectionPage() {
       poster,
       seats: selectedSeats.join(','),
       seatTypes: types.join(','),
-      total: total.toString()
+      total: total.toString(),
+      showtime_id: showtimeId ?? 0
     }).toString()
     router.push(`/orderdetail?${query}`)
   }
+
 
   const handleBack = () => {
     const query = new URLSearchParams({ date, time, theater, poster }).toString()

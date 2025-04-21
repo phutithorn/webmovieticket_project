@@ -1,6 +1,5 @@
 // app/api/showtimes/[id]/route.js
 import mysql from 'mysql2/promise'
-import dayjs from 'dayjs'
 
 const dbConfig = {
   host: process.env.TIDB_HOST,
@@ -10,7 +9,7 @@ const dbConfig = {
   ssl: { rejectUnauthorized: true }
 }
 
-// GET /api/showtimes/:id
+// GET /api/showtimes/[id]
 export async function GET(req, { params }) {
   const connection = await mysql.createConnection(dbConfig)
 
@@ -30,25 +29,10 @@ export async function GET(req, { params }) {
   }
 }
 
-// PUT /api/showtimes/:id
+// PUT /api/showtimes/[id]
 export async function PUT(req, { params }) {
   const { movie_id, theater_id, show_date, show_time } = await req.json()
-
-  if (!movie_id || !theater_id || !show_date || !show_time) {
-    return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 })
-  }
-
-  const formattedDate = dayjs(show_date).format('YYYY-MM-DD')
-  const formattedTime = dayjs(show_time, ['HH:mm', 'HH:mm:ss']).format('HH:mm:ss')
-
   const connection = await mysql.createConnection(dbConfig)
-  await connection.execute(
-    `UPDATE showtimes 
-     SET movie_id = ?, theater_id = ?, show_date = ?, show_time = ? 
-     WHERE id = ?`,
-    [movie_id, theater_id, formattedDate, formattedTime, params.id]
-  )
-  await connection.end()
 
   try {
     await connection.execute(
@@ -65,7 +49,7 @@ export async function PUT(req, { params }) {
   }
 }
 
-// DELETE /api/showtimes/:id
+// DELETE /api/showtimes/[id]
 export async function DELETE(req, { params }) {
   const connection = await mysql.createConnection(dbConfig)
 

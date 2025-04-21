@@ -27,8 +27,17 @@ export default function AdminTheatersPage() {
       fetch('/api/movies'),
     ])
     setTheaters(await tRes.json())
-    setShowtimes(await shRes.json())
     setMovies(await mRes.json())
+    const fetchedShowtimes = await shRes.json()
+
+    
+    const sortedShowtimes = fetchedShowtimes.sort((a, b) => {
+      const dateA = new Date(a.show_date)
+      const dateB = new Date(b.show_date)
+      return dateA - dateB
+    })
+    
+    setShowtimes(sortedShowtimes) 
   }
 
   useEffect(() => {
@@ -40,7 +49,7 @@ export default function AdminTheatersPage() {
     await fetch('/api/theaters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newTheater, }),
+      body: JSON.stringify({ name: newTheater } ),
     })
     setNewTheater('')
     fetchAll()
@@ -54,7 +63,7 @@ export default function AdminTheatersPage() {
 
   const handleDeleteShowtime = async (id) => {
     if (!confirm('Delete this showtime?')) return
-    await fetch(`/api/showtimes/${id}`, { method: 'DELETE' })
+    await fetch(`/api/adminshowtimes/${id}`, { method: 'DELETE' }) // ใช้ /adminshowtimes
     fetchAll()
   }
 
@@ -62,16 +71,16 @@ export default function AdminTheatersPage() {
     setShowtimeData({
       movie_id: sh.movie_id,
       theater_id: sh.theater_id,
-      show_date: sh.show_date,
+      show_date: sh.show_date, 
       show_time: sh.show_time,
-      movie_title: sh.movie_title 
+      movie_title: sh.movie_title
     })
     setEditId(sh.id)
   }
 
   const handleSubmitShowtime = async () => {
     const method = editId ? 'PUT' : 'POST'
-    const url = editId ? `/api/showtimes/${editId}` : '/api/showtimes'
+    const url = editId ? `/api/adminshowtimes/${editId}` : '/api/adminshowtimes'
   
     await fetch(url, {
       method,
@@ -82,7 +91,7 @@ export default function AdminTheatersPage() {
     setShowtimeData({ movie_id: '', theater_id: '', show_date: '', show_time: '' })
     setEditId(null)
     fetchAll()
-  }  
+  }
 
   return (
     <div className="flex min-h-screen bg-white text-black">
@@ -191,9 +200,7 @@ export default function AdminTheatersPage() {
 
             <button
               onClick={handleSubmitShowtime}
-              className={`px-3 py-1 text-white rounded ${
-                editId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-500 hover:bg-blue-600'
-              }`}
+              className={`px-3 py-1 text-white rounded ${editId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-500 hover:bg-blue-600'}`}
             >
               {editId ? 'Update Showtime' : 'Add Showtime'}
             </button>
